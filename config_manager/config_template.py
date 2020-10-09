@@ -15,6 +15,16 @@ class _Template:
         dependent_variables: Optional[List[str]] = None, 
         dependent_variables_required_values: Optional[List[List]] = None
     ):
+        """
+        Class constructor.
+
+        Args:
+            fields: 
+            nested_templates: 
+            level: 
+            dependent_variables: 
+            dependent_variables_required_values:
+        """
         self._fields = fields
         self._nested_templates = nested_templates
         self._level = level
