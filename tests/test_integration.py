@@ -1,57 +1,36 @@
 import yaml
-import config_field
-import config_template
-import base_configuration
+import os
 
-import test_constants
+import unittest
 
-with open("test_config.yaml", 'r') as yaml_file:
-   params = yaml.load(yaml_file, yaml.SafeLoader)
+from config_manager import base_configuration
+from config_manager import config_field
 
-person_template = config_template.Template(
-    fields=[
-        config_field.Field(name=test_constants.Constants.NUM_ARMS, types=[int], key=test_constants.Constants.NUM_ARMS, requirements=[lambda x: x > 0]),
-        config_field.Field(name=test_constants.Constants.NUM_LEGS, types=[int], key=test_constants.Constants.NUM_LEGS, requirements=[lambda x: x > 0])
-    ],
-    level=[test_constants.Constants.PERSON]
-)
+from tests.test_templates import test_template_1
 
-cat_template = config_template.Template(
-    dependent_variables = [test_constants.Constants.ANIMAL_TYPE],
-    dependent_variables_required_values = [[test_constants.Constants.CAT]],
-    fields=[
-        config_field.Field(name=test_constants.Constants.WHISKERS, types=[bool], key=test_constants.Constants.WHISKERS, requirements=[lambda x: x is True])
-    ],
-    level=[test_constants.Constants.ANIMAL, test_constants.Constants.CAT]
-)
-
-dog_template = config_template.Template(
-    dependent_variables = [test_constants.Constants.ANIMAL_TYPE],
-    dependent_variables_required_values = [[test_constants.Constants.DOG]],
-    fields=[
-        config_field.Field(name=test_constants.Constants.WHISKERS, types=[bool], key=test_constants.Constants.WHISKERS, requirements=[lambda x: x is False])
-    ],
-    level=[test_constants.Constants.ANIMAL, test_constants.Constants.DOG]
-)
-
-animal_template = config_template.Template(
-    fields=[
-        config_field.Field(name=test_constants.Constants.TYPE, types=[str], key=test_constants.Constants.ANIMAL_TYPE, 
-        requirements=[lambda x: x in [test_constants.Constants.CAT, test_constants.Constants.DOG]])
-    ],
-    level=[test_constants.Constants.ANIMAL],
-    nested_templates = [cat_template, dog_template]
-)
-
-base_config_template = config_template.Template(
-    fields=[
-        config_field.Field(name=test_constants.Constants.NAME, types=[str], key=test_constants.Constants.NAME),
-        config_field.Field(name=test_constants.Constants.SURNAME, types=[str], key=test_constants.Constants.SURNAME),
-        config_field.Field(name=test_constants.Constants.TYPE, types=[str], key=test_constants.Constants.TYPE, 
-        requirements=[lambda x: x in [test_constants.Constants.PERSON, test_constants.Constants.ANIMAL]])
-    ],
-    nested_templates=[person_template, animal_template]
-)
+FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
-bc = base_configuration.BaseConfiguration(configuration=params, template=base_config_template)
+class TestIntegration(unittest.TestCase):
+    """Test class for integration of functionality in config_manager package."""
+    def _test_integration_example(self, configuration, template):
+        bc = base_configuration.BaseConfiguration(configuration=configuration, template=template)
+
+    def test_integration_examples(self):
+        test_templates = [test_template_1.TestCase.base_config_template]
+        for i in range(1):
+            yaml_file_path = os.path.join(FILE_PATH, f"test_configs/test_config_{i + 1}.yaml")
+            with open(yaml_file_path, 'r') as yaml_file:
+                configuration = yaml.load(yaml_file, yaml.SafeLoader)
+            self._test_integration_example(configuration, test_templates[i])
+            
+
+def get_suite():
+    model_tests = [
+        'test_integration_examples'
+        ]
+    return unittest.TestSuite(map(TestIntegration, model_tests))
+
+
+runner = unittest.TextTestRunner(buffer=True, verbosity=1)
+runner.run(get_suite())
