@@ -40,7 +40,7 @@ class Template:
                     f"Mismatch: {len(dependent_variables)} dependent_variables provided."
                     f"{len(dependent_variables_required_values)} sets of required_values provided.")
             assert dependent_variables_required_values is not None, missing_error
-            assert len(dependent_variables) != len(dependent_variables_required_values), len_mismatch_error
+            assert len(dependent_variables) == len(dependent_variables_required_values), len_mismatch_error
 
         self._dependent_variables = dependent_variables
         self._dependent_variables_required_values = dependent_variables_required_values
