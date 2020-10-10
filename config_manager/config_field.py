@@ -16,7 +16,7 @@ class Field:
         """
         self._name = name
         self._key = key
-        self._types: Tuple = tuple(types)
+        self._types = tuple(types)
         self._requirements = requirements
 
     @property
@@ -28,7 +28,7 @@ class Field:
         return self._key
 
     @property
-    def types(self) -> List:
+    def types(self) -> Tuple:
         return self._types
 
     @property
