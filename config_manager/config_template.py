@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from typing import List, Union, Optional
 
-import config_field
+from config_manager import config_field
 
 
 class Template:
