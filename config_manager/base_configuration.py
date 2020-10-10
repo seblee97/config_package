@@ -12,8 +12,8 @@ import abc
 
 import yaml
 
-import config_template
-import config_field
+from config_manager import config_template
+from config_manager import config_field
 
 
 class BaseConfiguration(abc.ABC):
@@ -70,7 +70,8 @@ class BaseConfiguration(abc.ABC):
 
         return configuration
 
-    def _validate_field(self, field: config_field.Field, data: Dict, level: str) -> None:
+    @staticmethod
+    def validate_field(field: config_field.Field, data: Dict, level: str) -> None:
         """
         Orchestrates checks on data provided for particular field in config.
 
@@ -87,12 +88,13 @@ class BaseConfiguration(abc.ABC):
         # ensure field exists
         assert field.name in data, f"{field.name} not specified in configuration at level {level}"
         
-        self._validate_field_type(data[field.name], field.name, field.types, level=level)
-        self._validate_field_requirements(data[field.name], field.name, field.requirements, level=level)
+        BaseConfiguration.validate_field_type(data[field.name], field.name, field.types, level=level)
+        BaseConfiguration.validate_field_requirements(data[field.name], field.name, field.requirements, level=level)
 
         print(f"Field '{field.name}' at level '{level}' in config validated.")
 
-    def _validate_field_type(self, field_value: Any, field_name: str, permitted_types: List, level: Optional[str]) -> None:
+    @staticmethod
+    def validate_field_type(field_value: Any, field_name: str, permitted_types: List, level: Optional[str]) -> None:
         """
         Ensure value give for field is correct type.
 
@@ -112,7 +114,8 @@ class BaseConfiguration(abc.ABC):
                 f"Must be one of {permitted_types}.")
         assert isinstance(field_value, permitted_types), type_assertion_error_message
 
-    def _validate_field_requirements(self, field_value: Any, field_name: str, field_requirements: List[Callable], level: Optional[str]):
+    @staticmethod
+    def validate_field_requirements(field_value: Any, field_name: str, field_requirements: List[Callable], level: Optional[str]):
         """
         Ensure requirements are satisfied for field value.
 
@@ -177,7 +180,7 @@ class BaseConfiguration(abc.ABC):
             fields_to_check = list(data.keys())
 
             for field in template.fields:
-                self._validate_field(field=field, data=data, level=level_name)
+                self.validate_field(field=field, data=data, level=level_name)
                 self._set_property(property_name=field.key, property_value=data[field.name])
                 self._set_attribute_name_key_map(property_name=field.key, configuration_key_chain=template.level)
                 self._set_attribute_name_types_map(property_name=field.key, types=field.types)
@@ -306,8 +309,8 @@ class BaseConfiguration(abc.ABC):
         field_requirements = self._attribute_name_requirements_map[property_name]
 
         # check new property value is valid
-        self._validate_field_type(field_value=new_property_value, field_name=property_name, permitted_types=permitted_types)
-        self._validate_field_requirements(field_value=new_property_value, field_name=property_name, field_requirements=field_requirements) 
+        self.validate_field_type(field_value=new_property_value, field_name=property_name, permitted_types=permitted_types)
+        self.validate_field_requirements(field_value=new_property_value, field_name=property_name, field_requirements=field_requirements) 
 
         self._configuration[property_name] = new_property_value
         setattr(self, property_name, new_property_value)
