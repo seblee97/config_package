@@ -5,8 +5,8 @@ from typing import List, Union, Optional
 import config_field
 
 
-class _Template:
-
+class Template:
+    """Object to specify required structure of configuration file."""
     def __init__(
         self, 
         fields: List[config_field.Field], 
