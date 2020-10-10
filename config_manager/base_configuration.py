@@ -21,7 +21,7 @@ class BaseConfiguration(abc.ABC):
     
     Makes checks on configuration provided (type, other requirements specified by templates etc.)
     """
-    def __init__(self, configuration: Union[Dict, str], template: config_template._Template, verbose: bool = True) -> None:
+    def __init__(self, configuration: Union[Dict, str], template: config_template.Template, verbose: bool = True) -> None:
         """
         Initialise.
 
@@ -131,7 +131,7 @@ class BaseConfiguration(abc.ABC):
                 requirement_assertion_error_message = f"{base_error}Additional requirement check {r} for field {field_name} failed."
                 assert requirement(field_value), requirement_assertion_error_message
     
-    def _template_is_needed(self, template: config_template._Template) -> bool:
+    def _template_is_needed(self, template: config_template.Template) -> bool:
         """
         Checks whether according to specified conditions, the template needs to be checked. 
         For example, some fields are only relevant if another field higher up in the configuration 
@@ -149,7 +149,7 @@ class BaseConfiguration(abc.ABC):
                 zip(template.dependent_variables, template.dependent_variables_required_values)
             )
 
-    def _check_and_set_template(self, template: config_template._Template) -> None:
+    def _check_and_set_template(self, template: config_template.Template) -> None:
         """
         Checks whether data provided is consistent with template. 
         Also performs assignment of relevant configuration parameters as attributes of class.
