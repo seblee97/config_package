@@ -17,16 +17,31 @@ import config_field
 
 
 class BaseConfiguration(abc.ABC):
-    """Object in which to store configuration parameters."""
-    def __init__(self, configuration: Dict, template: config_template._Template) -> None: #TODO: make union with posix path object
+    """Object in which to store configuration parameters.
+    
+    Makes checks on configuration provided (type, other requirements specified by templates etc.)
+    """
+    def __init__(self, configuration: Union[Dict, str], template: config_template._Template, verbose: bool = True) -> None:
         """
         Initialise.
 
         Args:
-            configuration: 
-            template: 
+            configuration: either a (possibly nested) dictionary of configuration parameters 
+            or a path to a .yaml file containing the configuration.
+            template: template object specifying requirements and type checks configuration needs to adhere to.
+            verbosity: whether or not to print statements on progress of configuration parsing.
+
+        Raises:
+            FileNotFoundError: if configuration is given as path and cannot be found.
+            ValueError: if configuration is not of type dictionary or str.
         """
-        self._configuration = configuration
+        if isinstance(configuration, str):
+            self._configuration = self._read_config_from_path(configuration)
+        elif isinstance(configuration, dict):
+            self._configuration = configuration
+        else:
+            raise ValueError(f"object passed to 'configuration' parameter is type {type(configuration)}."
+                                "Should be dictionary or path (str).")
         self._template = template
 
         self._attribute_name_key_map: Dict[str, Union[List[str], str]] = {}
@@ -35,12 +50,39 @@ class BaseConfiguration(abc.ABC):
         
         self._check_and_set_template(self._template)
 
-        # self._get_induced_configuration_parameters()
-        # self._verify_configuration()
+    def _read_config_from_path(self, path: str) -> Dict:
+        """Read configuration from yaml file path.
+        
+        Args:
+            path: path to .yaml file.
+        
+        Returns:
+            configuration: configuration in dictionary format.
+
+        Raises:
+            FileNotFoundError if file cannot be found at path specified.
+        """
+        try:
+            with open(path, 'r') as yaml_file:
+                configuration = yaml.load(yaml_file, yaml.SafeLoader)
+        except FileNotFoundError:
+            raise FileNotFoundError("Yaml file could not be read.")
+
+        return configuration
 
     def _validate_field(self, field: config_field.Field, data: Dict, level: str) -> None:
         """
-        TODO
+        Orchestrates checks on data provided for particular field in config.
+
+        Args:
+            field: specifies requirements for field.
+            data: user provided configuration data.
+            level: description of nesting in configuration.
+
+        Raises:
+            AssertionError: if field does not exist.
+            AssertionError: if data is of incorrect type.
+            AssertionError: if data does not meet requirements specified by field object.
         """
         # ensure field exists
         assert field.name in data, f"{field.name} not specified in configuration at level {level}"
@@ -55,13 +97,13 @@ class BaseConfiguration(abc.ABC):
         Ensure value give for field is correct type.
 
         Args:
-            field_value:
-            field_name: 
-            permitted_types:
-            level:
+            field_value: data provided for particular field in config.
+            field_name: name of field.
+            permitted_types: list of allowed types according to field object. 
+            level: description of nesting in configuration.
 
         Raises:
-            AssertionError 
+            AssertionError: if data is of incorrect type.
         """
         type_assertion_error_message = f"Level: '{level}': " or ""
         type_assertion_error_message = (
@@ -75,13 +117,13 @@ class BaseConfiguration(abc.ABC):
         Ensure requirements are satisfied for field value.
 
         Args:
-            field_value:
-            field_name:
-            field_requirements:
-            level:
+            field_value: data provided for particular field in config.
+            field_name: name of field.
+            field_requirements: list of lambda functions that describe requirements for field_value.
+            level: description of nesting in configuration.
 
         Raises:
-            AssertionError
+            AssertionError: if data does not meet requirements specified by field object.
         """
         base_error = f"Level: '{level}': " or ""
         if field_requirements:
@@ -89,14 +131,38 @@ class BaseConfiguration(abc.ABC):
                 requirement_assertion_error_message = f"{base_error}Additional requirement check {r} for field {field_name} failed."
                 assert requirement(field_value), requirement_assertion_error_message
     
-    def _template_is_needed(self, template: config_template._Template):
+    def _template_is_needed(self, template: config_template._Template) -> bool:
+        """
+        Checks whether according to specified conditions, the template needs to be checked. 
+        For example, some fields are only relevant if another field higher up in the configuration 
+        tree are set to a particular value.
+
+        Args: 
+            template: object specifying required config structure.
+
+        Returns:
+            is_needed: whether or not template needs to be checked.
+        """
         return all(
                 getattr(self, dependent_variable) in dependent_variable_required_values 
                 for dependent_variable, dependent_variable_required_values in 
                 zip(template.dependent_variables, template.dependent_variables_required_values)
             )
 
-    def _check_and_set_template(self, template: config_template._Template):
+    def _check_and_set_template(self, template: config_template._Template) -> None:
+        """
+        Checks whether data provided is consistent with template. 
+        Also performs assignment of relevant configuration parameters as attributes of class.
+        
+        This method is or can be called recursively depending on structure of template.
+
+        Args:
+            template: object specifying requirements for configuration.
+
+        Raises:
+            AssertionError: If there are fields of configuration that are not covered by template 
+            and have not been checked as a result.
+        """
         data = self._configuration
         if template.level:
             level_name = '/'.join(template.level)
@@ -126,29 +192,20 @@ class BaseConfiguration(abc.ABC):
                 f"There are fields at level '{level_name}' of config that have not been validated: {fields_to_check}"
             assert not fields_to_check, fields_unchecked_assertion_error
 
-    # @abc.abstractmethod
-    # def _get_induced_configuration_parameters(self):
-    #     """Read in configuration variables and make relevant params properties of class."""
-    #     pass
-
-    # @abc.abstractmethod
-    # def _verify_configuration(self):
-    #     """Implements logic to establish valid configuration specification."""
-    #     pass
-
     @property
     def config(self) -> Dict:
         return self._configuration
 
-    def save_configuration(self, path: str) -> None:
+    def save_configuration(self, folder_path: str, file_name: str = "config.yaml") -> None:
         """
         Save copy of configuration to specified path. 
 
         Args:
-            path:: path to folder in which to save configuration
+            folder_path: path to folder in which to save configuration
+            file_name: name of file to save configuration under.
         """
-        os.makedirs(path, exist_ok=True)
-        with open(os.path.join(path, "config.yaml"), "w") as f:
+        os.makedirs(folder_path, exist_ok=True)
+        with open(os.path.join(folder_path, file_name), "w") as f:
             yaml.dump(self._configuration, f)
 
     def get_property(self, property_name: str) -> Any:
@@ -185,13 +242,26 @@ class BaseConfiguration(abc.ABC):
                 )
         setattr(self, property_name, property_value)
 
-    def _set_attribute_name_types_map(self, property_name: str, types: List) -> None:
+    def _set_attribute_name_types_map(self, property_name: str, types: Tuple) -> None:
         """
+        Store in separate map (property_name, types) so that if/when amendments are made, 
+        type checks can still be performed on new value.
+
+        Args:
+            property_name: name of attribute created for class.
+            types: set of valid types for field associated with property_name
         """
         self._attribute_name_types_map[property_name] = types
 
     def _set_attribute_name_requirements_map(self, property_name: str, requirements: List[Callable]) -> None:
         """
+        Store in separate map (property_name, requirements) so that if/when amendments are made, 
+        requirements checks can still be performed on new value.
+
+        Args:
+            property_name: name of attribute created for class.
+            requirements: list of lambda functions that specify requirements 
+            for field associated with property_name.
         """
         self._attribute_name_requirements_map[property_name] = requirements
 
@@ -242,13 +312,3 @@ class BaseConfiguration(abc.ABC):
         self._configuration[property_name] = new_property_value
         setattr(self, property_name, new_property_value)
         self._maybe_reconfigure(property_name)
-
-    # @abc.abstractmethod
-    # def _maybe_reconfigure(self, property_name: str) -> None:
-    #     """
-    #     Enact changes to config based on change to property_name.
-
-    #     Args:
-    #         property_name: name of field to check
-    #     """
-    #     pass
