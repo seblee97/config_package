@@ -4,7 +4,7 @@ from config_manager import base_configuration
 from config_manager import config_field
 
 
-class BaseConfigurationTest(unittest.TestCase):
+class TestBaseConfiguration(unittest.TestCase):
     """Test class for base_configuration.BaseConfiguration unit tests."""
     def test_validate_field(self):
         valid_test_fields = [
@@ -31,7 +31,7 @@ def get_suite():
     model_tests = [
         'test_validate_field'
         ]
-    return unittest.TestSuite(map(BaseConfigurationTest, model_tests))
+    return unittest.TestSuite(map(TestBaseConfiguration, model_tests))
 
 
 runner = unittest.TextTestRunner(buffer=True, verbosity=1)
