@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple, Union
 
 class Field:
     """Object to specify requirements for a field provided in configuration file."""
-    def __init__(self, name: str, key: str, types: List, requirements: Optional[List] = None):
+    def __init__(self, name: str, types: List, requirements: Optional[List] = None, key: Optional[str]):
         """
         Class constructor.
 
@@ -11,11 +11,12 @@ class Field:
             name: leaf-level name given to parameter/property in configuration file.
             key: name (ideally defined in a constants file) under which parameter 
             is stored in configuration object and subsequently retrieved with.
+            If this is not provided, name will be used by default.
             types: list of valid types for property.
             requirements: list of lambda functions to test validity of property.
         """
         self._name = name
-        self._key = key
+        self._key = key or self._name
         self._types = tuple(types)
         self._requirements = requirements
 
