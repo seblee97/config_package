@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple, Union
 
 class Field:
     """Object to specify requirements for a field provided in configuration file."""
-    def __init__(self, name: str, types: List, requirements: Optional[List] = None, key: Optional[str]):
+    def __init__(self, name: str, types: List, requirements: Optional[List] = None, key: Optional[str] = None):
         """
         Class constructor.
 
