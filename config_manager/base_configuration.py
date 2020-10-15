@@ -94,7 +94,7 @@ class BaseConfiguration(abc.ABC):
         print(f"Field '{field.name}' at level '{level}' in config validated.")
 
     @staticmethod
-    def validate_field_type(field_value: Any, field_name: str, permitted_types: List, level: Optional[str]) -> None:
+    def validate_field_type(field_value: Any, field_name: str, permitted_types: List, level: Optional[str] = "") -> None:
         """
         Ensure value give for field is correct type.
 
@@ -115,7 +115,7 @@ class BaseConfiguration(abc.ABC):
         assert isinstance(field_value, permitted_types), type_assertion_error_message
 
     @staticmethod
-    def validate_field_requirements(field_value: Any, field_name: str, field_requirements: List[Callable], level: Optional[str]):
+    def validate_field_requirements(field_value: Any, field_name: str, field_requirements: List[Callable], level: Optional[str] = ""):
         """
         Ensure requirements are satisfied for field value.
 
