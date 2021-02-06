@@ -1,19 +1,10 @@
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Union
-from typing import overload
-from typing import Optional
-from typing import Tuple
-from typing import Callable
-
-import os
 import abc
+import collections
+import os
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import yaml
-
-from config_manager import config_template
-from config_manager import config_field
+from config_manager import config_field, config_template
 
 
 class BaseConfiguration(abc.ABC):
@@ -21,7 +12,7 @@ class BaseConfiguration(abc.ABC):
     
     Makes checks on configuration provided (type, other requirements specified by templates etc.)
     """
-    def __init__(self, configuration: Union[Dict, str], template: config_template.Template, verbose: bool = True) -> None:
+    def __init__(self, configuration: Union[Dict, str], template: config_template.Template, changes: List[Dict] = [], verbose: bool = True) -> None:
         """
         Initialise.
 
@@ -42,6 +33,11 @@ class BaseConfiguration(abc.ABC):
         else:
             raise ValueError(f"object passed to 'configuration' parameter is type {type(configuration)}."
                                 "Should be dictionary or path (str).")
+
+        # perform any specified changes
+        for change in changes:
+            self._configuration = self._update_config(configuration_dictionary=self._configuration, update_dictionary=change)
+
         self._template = template
 
         self._attribute_name_key_map: Dict[str, Union[List[str], str]] = {}
@@ -49,6 +45,14 @@ class BaseConfiguration(abc.ABC):
         self._attribute_name_requirements_map: Dict[str, List[Callable]] = {}
         
         self._check_and_set_template(self._template)
+
+    def _update_config(self, configuration_dictionary: Dict, update_dictionary: Dict) -> Dict:
+        for k, v in update_dictionary.items():
+            if isinstance(v, collections.abc.Mapping):
+                configuration_dictionary[k] = self._update_config(configuration_dictionary.get(k, {}), v)
+            else:
+                configuration_dictionary[k] = v
+        return configuration_dictionary
 
     def _read_config_from_path(self, path: str) -> Dict:
         """Read configuration from yaml file path.
@@ -314,4 +318,4 @@ class BaseConfiguration(abc.ABC):
 
         self._configuration[property_name] = new_property_value
         setattr(self, property_name, new_property_value)
-        self._maybe_reconfigure(property_name)
+        # TODO: self._maybe_reconfigure(property_name)
