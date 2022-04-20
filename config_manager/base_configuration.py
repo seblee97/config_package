@@ -262,21 +262,29 @@ class BaseConfiguration(abc.ABC):
 
             for field in template.fields:
                 self.validate_field(field=field, data=data, level=level_name)
+
+                if template.key_prefix is not None:
+                    field_key = f"{template.key_prefix}_{field.key}"
+                else:
+                    field_key = field.key
+                    for key_prefix in key_prefixes:
+                        field_key = f"{key_prefix}_{field_key}"
+
                 self._set_property(
-                    property_name=field.key, property_value=data[field.name]
+                    property_name=field_key, property_value=data[field.name]
                 )
                 self._set_attribute_name_key_map(
-                    property_name=field.key, configuration_key_chain=template.level
+                    property_name=field_key, configuration_key_chain=template.level
                 )
                 self._set_attribute_name_types_map(
-                    property_name=field.key, types=field.types
+                    property_name=field_key, types=field.types
                 )
                 self._set_attribute_name_requirements_map(
-                    property_name=field.key, requirements=field.requirements
+                    property_name=field_key, requirements=field.requirements
                 )
                 print(
                     f"Field '{field.name}' at level '{level_name}' "
-                    f"in config set with key '{field.key}'."
+                    f"in config set with key '{field_key}'."
                 )
                 fields_to_check.remove(field.name)
             for nested_template in template.nested_templates:
@@ -288,6 +296,8 @@ class BaseConfiguration(abc.ABC):
                 f"that have not been validated: {fields_to_check}"
             )
             assert not fields_to_check, fields_unchecked_assertion_error
+
+            template.register_check()
 
     @property
     def config(self) -> Dict:
