@@ -191,10 +191,21 @@ class BaseConfiguration(abc.ABC):
         Returns:
             is_needed: whether or not template needs to be checked.
         """
+        reduced_dependent_variables = []
+        for dependent_variable in template.dependent_variables:
+            if isinstance(dependent_variable, list):
+                reduced_dependent_variables.append(
+                    dependent_variable[template.check_count]
+                )
+            elif isinstance(dependent_variable, str):
+                reduced_dependent_variables.append(dependent_variable)
+            else:
+                raise ValueError("dependent_variable must be list of str or str.")
+
         return all(
             getattr(self, dependent_variable) in dependent_variable_required_values
             for dependent_variable, dependent_variable_required_values in zip(
-                template.dependent_variables,
+                reduced_dependent_variables,
                 template.dependent_variables_required_values,
             )
         )
