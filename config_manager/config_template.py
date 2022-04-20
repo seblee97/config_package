@@ -10,6 +10,7 @@ class Template:
         self,
         fields: List[config_field.Field],
         nested_templates: Optional[List] = None,
+        key_prefix: Optional[str] = None,
         level: Optional[List[str]] = None,
         dependent_variables: Optional[List[str]] = None,
         dependent_variables_required_values: Optional[List[List]] = None,
@@ -22,6 +23,7 @@ class Template:
             the configuration.
             nested_templates: list of fields at this level of configuration that
                 are themselves groups of fields, and require subsequent template.
+            key_prefix: optional str to pre-pend to any key in a nested template.
             level: description of nesting in configuration.
             dependent_variables: (optional) list of configuration keys on which
                 necessity of validating this template is dependent.
@@ -35,8 +37,11 @@ class Template:
                 dependent_variables_reqired_values do not match.
         """
         self._fields = fields
-        self._nested_templates = nested_templates
         self._level = level
+        self._nested_templates = nested_templates
+        self._key_prefix = key_prefix
+
+        self._check_count = 0
 
         if dependent_variables is not None:
             missing_error = (
@@ -82,3 +87,14 @@ class Template:
             return self._level[-1]
         else:
             return None
+
+    @property
+    def key_prefix(self) -> str:
+        return self._key_prefix
+
+    @property
+    def check_count(self) -> int:
+        return self._check_count
+
+    def register_check(self) -> None:
+        self._check_count += 1
