@@ -226,9 +226,29 @@ class BaseConfiguration(abc.ABC):
             covered by template and have not been checked as a result.
         """
         data = self._configuration
+
+        key_prefixes = []
+
         if template.level:
-            level_name = "/".join(template.level)
-            for level in template.level:
+            reduced_template_level = []
+
+            for sub_level in template.level:
+                if isinstance(sub_level, dict):
+                    sub_level_keys = list(sub_level.keys())
+                    key_prefix = sub_level_keys[
+                        template.check_count
+                    ]  # current_sub_level
+                    reduced_template_level.append(sub_level[key_prefix])
+                    key_prefixes.append(key_prefix)
+                elif isinstance(sub_level, str):
+                    reduced_template_level.append(sub_level)
+                else:
+                    raise ValueError(
+                        "each sub level of template level must be list of str or str"
+                    )
+
+            level_name = "/".join(reduced_template_level)
+            for level in reduced_template_level:
                 data = data.get(level)
         else:
             level_name = "ROOT"
