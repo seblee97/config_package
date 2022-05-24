@@ -210,7 +210,9 @@ class BaseConfiguration(abc.ABC):
             )
         )
 
-    def _check_and_set_template(self, template: config_template.Template) -> None:
+    def _check_and_set_template(
+        self, template: config_template.Template, check: Optional[List[str]] = []
+    ) -> None:
         """
         Checks whether data provided is consistent with template.
         Also performs assignment of relevant configuration parameters as
@@ -254,8 +256,10 @@ class BaseConfiguration(abc.ABC):
             level_name = "ROOT"
 
         # only check template if required
-        if not template.dependent_variables or self._template_is_needed(
-            template=template
+        if (
+            not template.dependent_variables
+            or self._template_is_needed(template=template)
+            or template.template_name in check
         ):
 
             fields_to_check = list(data.keys())
@@ -282,14 +286,11 @@ class BaseConfiguration(abc.ABC):
                 self._set_attribute_name_requirements_map(
                     property_name=field_key, requirements=field.requirements
                 )
-                print(
-                    f"Field '{field.name}' at level '{level_name}' "
-                    f"in config set with key '{field_key}'."
-                )
                 fields_to_check.remove(field.name)
             for nested_template in template.nested_templates:
-                self._check_and_set_template(nested_template)
-                fields_to_check.remove(nested_template.template_name)
+                self._check_and_set_template(nested_template, check=fields_to_check)
+                if nested_template.check_count:
+                    fields_to_check.remove(nested_template.template_name)
 
             fields_unchecked_assertion_error = (
                 f"There are fields at level '{level_name}' of config "
