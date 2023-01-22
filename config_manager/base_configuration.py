@@ -4,6 +4,7 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import yaml
+
 from config_manager import config_field, config_template
 
 
@@ -256,9 +257,11 @@ class BaseConfiguration(abc.ABC):
             level_name = "ROOT"
 
         # only check template if required
+        if template.dependent_variables:
+            if not self._template_is_needed(template=template):
+                check.remove(template.template_name)
         if (
             not template.dependent_variables
-            or self._template_is_needed(template=template)
             or template.template_name in check
         ):
 
