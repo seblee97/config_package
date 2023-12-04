@@ -293,7 +293,8 @@ class BaseConfiguration(abc.ABC):
             for nested_template in template.nested_templates:
                 self._check_and_set_template(nested_template, check=fields_to_check)
                 if nested_template.check_count:
-                    fields_to_check.remove(nested_template.template_name)
+                    if nested_template.template_name in fields_to_check:
+                        fields_to_check.remove(nested_template.template_name)
 
             fields_unchecked_assertion_error = (
                 f"There are fields at level '{level_name}' of config "
